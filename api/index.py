@@ -4,11 +4,10 @@ import numpy as np
 import yfinance as yf
 import requests
 import json
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import MinMaxScaler
 import pandas_datareader.data as web
 import statsmodels.api as sm
-from pypfopt.efficient_frontier import EfficientFrontier
-from pypfopt import risk_models
-from pypfopt import expected_returns
 
 app = Flask(__name__)
 
