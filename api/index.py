@@ -4,7 +4,6 @@ import numpy as np
 import yfinance as yf
 import requests
 import json
-import pandas_datareader.data as web
 import statsmodels.api as sm
 
 app = Flask(__name__)
