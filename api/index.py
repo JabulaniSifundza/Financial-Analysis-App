@@ -7,7 +7,6 @@ import json
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MinMaxScaler
 import pandas_datareader.data as web
-import statsmodels.api as sm
 
 app = Flask(__name__)
 
