@@ -4,7 +4,6 @@ import numpy as np
 import yfinance as yf
 import requests
 import json
-import scipy.optimize as sco
 
 app = Flask(__name__)
 
