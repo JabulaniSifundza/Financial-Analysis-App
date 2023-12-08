@@ -10,4 +10,4 @@ app = Flask(__name__, static_folder="static", template_folder="views")
 
 @app.route("/")
 def home():
-    return render_template("views/index.html")
+    return render_template("index.html")
