@@ -9,6 +9,8 @@ import google.generativeai as palm
 app = Flask(__name__, static_folder="static", template_folder="views")
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
 GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
+symbol = "AAPL"
+FMP_ENDPOINT = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FMP_API_KEY}"
 
 
 @app.route("/")
