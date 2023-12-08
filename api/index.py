@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 import requests
 import json
-from vectordb import Memory
+import google.generativeai as palm
 
 app = Flask(__name__)
 
