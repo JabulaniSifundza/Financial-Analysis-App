@@ -5,7 +5,7 @@ import requests
 import json
 import google.generativeai as palm
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="views")
 
 
 @app.route("/")
