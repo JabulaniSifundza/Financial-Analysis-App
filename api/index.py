@@ -3,8 +3,7 @@ import pandas as pd
 import yfinance as yf
 import requests
 import json
-import chromadb
-from chromadb.api.types import Documents, Embeddings
+from vectordb import Memory
 
 app = Flask(__name__)
 
