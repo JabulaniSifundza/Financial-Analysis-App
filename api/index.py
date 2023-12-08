@@ -4,6 +4,7 @@ import pandas as pd
 import yfinance as yf
 import requests
 import json
+from bs4 import BeautifulSoup
 import google.generativeai as palm
 
 app = Flask(__name__, static_folder="static", template_folder="views")
