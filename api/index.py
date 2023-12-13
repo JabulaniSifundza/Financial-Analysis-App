@@ -9,6 +9,7 @@ import google.generativeai as palm
 import pdfplumber
 import textwrap
 import numpy as np
+from io import BytesIO
 
 app = Flask(__name__, static_folder="static", template_folder="views")
 GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
@@ -33,9 +34,11 @@ def embed_fn(text):
     return palm.generate_embeddings(model=model, text=text)["embedding"]
 
 
-def extract_full_pdf(file_path):
+def extract_full_pdf(url):
     texts = []
-    with pdfplumber.open(file_path) as pdf:
+    rq = requests.get(url)
+    pdf = pdfplumber.load(BytesIO(rq.content))
+    with pdfplumber.open(pdf) as pdf:
         total_pages = len(pdf.pages)
         for i in range(total_pages):
             page = pdf.pages[i]
@@ -80,9 +83,7 @@ def home():
     ]
     GLOBAL_MODEL = models[0].name
     PDF_FILE_PATHS = [
-        "/static/files/Encyclopedic Dictionary of Finance.pdf",
-        "/static/files/Investopedia.pdf",
-        "/static/files/Plain English guide to financial terms.pdf",
+        "https://firebasestorage.googleapis.com/v0/b/financial-advisor-llm.appspot.com/o/LLM%20Sources%2FInvestopedia.pdf?alt=media&token=ecd64c82-f518-4592-80e5-be6a73543998",
     ]
     NEW_TEXTS = [extract_full_pdf(path) for path in PDF_FILE_PATHS]
     flat_list = [element for tuple in NEW_TEXTS for element in tuple]
