@@ -36,13 +36,12 @@ def embed_fn(text):
 
 def extract_full_pdf(url):
     texts = []
-    rq = requests.get(url)
-    pdf = pdfplumber.load(BytesIO(rq.content))
-    with pdfplumber.open(pdf) as pdf:
-        total_pages = len(pdf.pages)
-        for i in range(total_pages):
-            page = pdf.pages[i]
-            texts.append(page.extract_text())
+    response = requests.get(url)
+    pdf = pdfplumber.open(BytesIO(response.content))
+    total_pages = len(pdf.pages)
+    for i in range(total_pages):
+        page = pdf.pages[i]
+        texts.append(page.extract_text())
     return tuple(texts)
 
 
