@@ -61,7 +61,7 @@ def find_best_passage(query, dataframe):
 
 def make_prompt(query, relevant_passage):
     escaped = relevant_passage.replace("'", "").replace('"', "").replace("\n", " ")
-    prompt = textwrap.dedent(
+    return textwrap.dedent(
         """You are a helpful and informative bot that answers questions using text from the reference passage included below. \
   Be sure to respond in a complete sentence, being as comprehensive as possible, including all relevant background information. \
   However, you are talking to a non-technical audience, so be sure to break down complicated concepts and \
@@ -73,8 +73,6 @@ def make_prompt(query, relevant_passage):
     ANSWER:
   """
     ).format(query=query, relevant_passage=escaped)
-
-    return prompt
 
 
 query = "What is the Stock Market?"
