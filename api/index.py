@@ -10,31 +10,21 @@ import pdfplumber
 import textwrap
 import numpy as np
 
+GLOBAL_MODEL = None
+GLOBAL_PDF_DF = None
+GLOBAL_GEN_MODEL = None
+
 app = Flask(__name__, static_folder="static", template_folder="views")
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
 GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
 symbol = "AAPL"
 FMP_ENDPOINT = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FMP_API_KEY}"
 
-models = [
-    m for m in palm.list_models() if "embedText" in m.supported_generation_methods
-]
+models = [m for m in palm.list_models() if "embedText" in m.supported_generation_methods]
 model = models[0].name
-PDF_FILE_PATHS = []
-NEW_TEXTS = [extract_full_pdf(path) for path in PDF_FILE_PATHS]
-flat_list = [element for tuple in NEW_TEXTS for element in tuple]
-PDF_DF = pd.DataFrame(flat_list)
-PDF_DF.columns = ["Text"]
-
 
 def embed_fn(text):
     return palm.generate_embeddings(model=model, text=text)["embedding"]
-
-
-#
-PDF_DF = PDF_DF[PDF_DF["Text"] != ""]
-PDF_DF["Embeddings"] = PDF_DF["Text"].apply(embed_fn)
-
 
 def extract_full_pdf(file_path):
     texts = []
@@ -75,31 +65,6 @@ def make_prompt(query, relevant_passage):
     ).format(query=query, relevant_passage=escaped)
 
 
-query = "What is the Stock Market?"
-passage = find_best_passage(query, PDF_DF)
-prompt = make_prompt(query, passage)
-
-text_models = [
-    m for m in palm.list_models() if "generateText" in m.supported_generation_methods
-]
-text_model = text_models[0]
-temperature = 0.5
-answer = palm.generate_text(
-    prompt=prompt,
-    model=text_model,
-    candidate_count=3,
-    temperature=temperature,
-    max_output_tokens=1000,
-)
-for i, candidate in enumerate(answer.candidates):
-    print(f"Candidate {i}: {candidate['output']}\n")
-
-longest_candidate = max(
-    answer.candidates, key=lambda candidate: len(candidate["output"])
-)
-print(f"Candidate with longest output: {longest_candidate['output']}\n")
-
-
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -110,7 +75,22 @@ def financial_qna():
     """
     Use the LLM and Financial Books to answer questions
     """
-    return "ask me something"
+    global GLOBAL_PDF_DF, GLOBAL_GEN_MODEL
+    query = "What is the Stock Market?"
+    passage = find_best_passage(query, GLOBAL_PDF_DF)
+    prompt = make_prompt(query, passage)
+    temperature = 0.5
+    answer = palm.generate_text(
+        prompt=prompt,
+        model=GLOBAL_GEN_MODEL,
+        candidate_count=3,
+        temperature=temperature,
+        max_output_tokens=1000,
+    )
+    for i, candidate in enumerate(answer.candidates):
+        print(f"Candidate {i}: {candidate['output']}\n")
+
+    return max(answer.candidates, key=lambda candidate: len(candidate["output"]))
 
 
 @app.route("/research", methods=["POST"])
