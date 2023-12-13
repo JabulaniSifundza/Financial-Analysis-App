@@ -79,7 +79,11 @@ def home():
         m for m in palm.list_models() if "embedText" in m.supported_generation_methods
     ]
     GLOBAL_MODEL = models[0].name
-    PDF_FILE_PATHS = []
+    PDF_FILE_PATHS = [
+        "/static/files/Encyclopedic Dictionary of Finance.pdf",
+        "/static/files/Investopedia.pdf",
+        "/static/files/Plain English guide to financial terms.pdf",
+    ]
     NEW_TEXTS = [extract_full_pdf(path) for path in PDF_FILE_PATHS]
     flat_list = [element for tuple in NEW_TEXTS for element in tuple]
     GLOBAL_PDF_DF = pd.DataFrame(flat_list)
