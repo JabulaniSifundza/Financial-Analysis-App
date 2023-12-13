@@ -7,12 +7,99 @@ import json
 from bs4 import BeautifulSoup
 import google.generativeai as palm
 import pdfplumber
+import textwrap
+import numpy as np
 
 app = Flask(__name__, static_folder="static", template_folder="views")
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
 GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
 symbol = "AAPL"
 FMP_ENDPOINT = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FMP_API_KEY}"
+
+models = [
+    m for m in palm.list_models() if "embedText" in m.supported_generation_methods
+]
+model = models[0].name
+PDF_FILE_PATHS = []
+NEW_TEXTS = [extract_full_pdf(path) for path in PDF_FILE_PATHS]
+flat_list = [element for tuple in NEW_TEXTS for element in tuple]
+PDF_DF = pd.DataFrame(flat_list)
+PDF_DF.columns = ["Text"]
+
+
+def embed_fn(text):
+    return palm.generate_embeddings(model=model, text=text)["embedding"]
+
+
+#
+PDF_DF = PDF_DF[PDF_DF["Text"] != ""]
+PDF_DF["Embeddings"] = PDF_DF["Text"].apply(embed_fn)
+
+
+def extract_full_pdf(file_path):
+    texts = []
+    with pdfplumber.open(file_path) as pdf:
+        total_pages = len(pdf.pages)
+        for i in range(total_pages):
+            page = pdf.pages[i]
+            texts.append(page.extract_text())
+    return tuple(texts)
+
+
+def find_best_passage(query, dataframe):
+    """
+    Compute the distances between the query and each document in the dataframe
+    using the dot product.
+    """
+    query_embedding = palm.generate_embeddings(model=model, text=query)
+    dot_products = np.dot(
+        np.stack(dataframe["Embeddings"]), query_embedding["embedding"]
+    )
+    idx = np.argmax(dot_products)
+    return dataframe.iloc[idx]["Text"]
+
+
+def make_prompt(query, relevant_passage):
+    escaped = relevant_passage.replace("'", "").replace('"', "").replace("\n", " ")
+    prompt = textwrap.dedent(
+        """You are a helpful and informative bot that answers questions using text from the reference passage included below. \
+  Be sure to respond in a complete sentence, being as comprehensive as possible, including all relevant background information. \
+  However, you are talking to a non-technical audience, so be sure to break down complicated concepts and \
+  strike a professional, friendly and converstional tone. \
+  If the passage is irrelevant to the answer, you may ignore it.
+  QUESTION: '{query}'
+  PASSAGE: '{relevant_passage}'
+
+    ANSWER:
+  """
+    ).format(query=query, relevant_passage=escaped)
+
+    return prompt
+
+
+query = "What is the Stock Market?"
+passage = find_best_passage(query, PDF_DF)
+prompt = make_prompt(query, passage)
+
+text_models = [
+    m for m in palm.list_models() if "generateText" in m.supported_generation_methods
+]
+text_model = text_models[0]
+temperature = 0.5
+answer = palm.generate_text(
+    prompt=prompt,
+    model=text_model,
+    candidate_count=3,
+    temperature=temperature,
+    max_output_tokens=1000,
+)
+for i, candidate in enumerate(answer.candidates):
+    print(f"Candidate {i}: {candidate['output']}\n")
+
+longest_candidate = max(
+    answer.candidates, key=lambda candidate: len(candidate["output"])
+)
+print(f"Candidate with longest output: {longest_candidate['output']}\n")
 
 
 @app.route("/")
