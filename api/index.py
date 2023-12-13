@@ -10,6 +10,7 @@ import pdfplumber
 import textwrap
 import numpy as np
 
+app = Flask(__name__, static_folder="static", template_folder="views")
 GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
 palm.configure(api_key=GOOGLE_PALM_API_KEY)
 
@@ -17,7 +18,7 @@ GLOBAL_MODEL = None
 GLOBAL_PDF_DF = None
 GLOBAL_GEN_MODEL = None
 
-app = Flask(__name__, static_folder="static", template_folder="views")
+
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
 symbol = "AAPL"
 FMP_ENDPOINT = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FMP_API_KEY}"
@@ -73,6 +74,24 @@ def make_prompt(query, relevant_passage):
 
 @app.route("/")
 def home():
+    global GLOBAL_MODEL, GLOBAL_PDF_DF, GLOBAL_GEN_MODEL
+    models = [
+        m for m in palm.list_models() if "embedText" in m.supported_generation_methods
+    ]
+    GLOBAL_MODEL = models[0].name
+    PDF_FILE_PATHS = []
+    NEW_TEXTS = [extract_full_pdf(path) for path in PDF_FILE_PATHS]
+    flat_list = [element for tuple in NEW_TEXTS for element in tuple]
+    GLOBAL_PDF_DF = pd.DataFrame(flat_list)
+    GLOBAL_PDF_DF.columns = ["Text"]
+    GLOBAL_PDF_DF = GLOBAL_PDF_DF[GLOBAL_PDF_DF["Text"] != ""]
+    GLOBAL_PDF_DF["Embeddings"] = GLOBAL_PDF_DF["Text"].apply(embed_fn)
+    text_models = [
+        m
+        for m in palm.list_models()
+        if "generateText" in m.supported_generation_methods
+    ]
+    GLOBAL_GEN_MODEL = text_models[0]
     return render_template("index.html")
 
 
