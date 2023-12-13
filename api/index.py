@@ -10,21 +10,27 @@ import pdfplumber
 import textwrap
 import numpy as np
 
+GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
+palm.configure(api_key=GOOGLE_PALM_API_KEY)
+
 GLOBAL_MODEL = None
 GLOBAL_PDF_DF = None
 GLOBAL_GEN_MODEL = None
 
 app = Flask(__name__, static_folder="static", template_folder="views")
 FMP_API_KEY = os.environ.get("FMP_API_KEY")
-GOOGLE_PALM_API_KEY = os.environ.get("google_palm_api_key")
 symbol = "AAPL"
 FMP_ENDPOINT = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?period=annual&apikey={FMP_API_KEY}"
 
-models = [m for m in palm.list_models() if "embedText" in m.supported_generation_methods]
+models = [
+    m for m in palm.list_models() if "embedText" in m.supported_generation_methods
+]
 model = models[0].name
+
 
 def embed_fn(text):
     return palm.generate_embeddings(model=model, text=text)["embedding"]
+
 
 def extract_full_pdf(file_path):
     texts = []
